@@ -4,15 +4,313 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Y2K Virtual Pet Room</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      background: #222;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #room {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      background: url('assets/background.jpg') center/cover no-repeat;
+      border: 5px solid #ff00ff;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+    #pet {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      background: url('assets/green-penguin.png') center/cover no-repeat;
+      left: 368px;
+      top: 268px;
+      transition: top 0.1s, left 0.1s;
+    }
+    .accessory {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .item {
+      display: inline-block;
+      margin: 10px;
+      border: none;
+      padding: 5px;
+      cursor: grab;
+    }
+    .item img {
+      width: 32px;
+      height: 32px;
+    }
+    #inventory {
+      margin-top: 10px;
+    }
+    .bar {
+      width: 200px;
+      height: 20px;
+      background: #555;
+      border: 2px solid white;
+      margin: 10px;
+    }
+    .fill {
+      height: 100%;
+      background: limegreen;
+    }
+    #shop {
+      display: none;
+      width: 800px;
+      height: 600px;
+      background: url('assets/shop-bg.png') center/cover no-repeat;
+      border: 5px solid #00ffff;
+      margin-top: 20px;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .shop-item {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px;
+      border: 2px solid white;
+      background: rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+    }
+    .shop-item img {
+      width: 48px;
+      height: 48px;
+      display: block;
+      margin: 0 auto 5px auto;
+    }
+  </style>
 </head>
-<body>
+$1
   <audio id="bg-music" autoplay loop>
-    <source src="assets/music.mp3" type="audio/mpeg" />
+    <source src="assets/music.mp3" type="audio/mpeg">
+    <source src="assets/music.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
-<h1>🐾 Y2K Virtual Pet Room</h1>
-<!-- Full canvas body content should be copied here in a real export -->
-<!-- Skipped due to token limits in this environment -->
+  <h1>🐾 Y2K Virtual Pet Room</h1>
+
+  <div id="currency">
+    <strong>Coins:</strong> <span id="coinCount">0</span>
+    <button onclick="earnCoins()">🎮 Play Minigame</button>
+    <button onclick="startMinigame()">🕹️ Launch Minigame</button>
+    <button onclick="enterShop()">🛍️ Go to Shop</button>
+  </div>
+
+  <div id="room" >
+    <div id="pet" style="left: 368px; top: 268px; z-index: 10;">
+      <img class="accessory" id="hat" src="assets/hat.png" style="display: none;" />
+    </div>
+  </div>
+
+  <div id="inventory"></div>
+
+  <!-- Status bars -->
+  <div id="actions">
+    <button onclick="feed()">🍗 Feed</button>
+    <button onclick="play()">🎮 Play</button>
+    <button onclick="heal()">💊 Heal</button>
+  </div>
+
+  <div id="status-bars">
+    <div class="bar"><div class="fill" id="hungerBar" style="width: 100%;"></div></div>
+    <div class="bar"><div class="fill" id="happinessBar" style="width: 100%;"></div></div>
+    <div class="bar"><div class="fill" id="healthBar" style="width: 100%;"></div></div>
+  </div>
+
+  <div id="shop">
+    <h2>🛍️ Welcome to the Shop</h2>
+    <p>You have <strong><span id="shopCoins">0</span></strong> coins.</p>
+    <div class="shop-item" onclick="purchase('bed', 10)">
+      <img src="assets/pink-bed.png" alt="Bed" />
+      Bed - 10 coins
+    </div>
+    <div class="shop-item" onclick="purchase('poster', 5)">
+      <img src="assets/superhero-poster.png" alt="Poster" />
+      Poster - 5 coins
+    </div>
+    <button onclick="returnToRoom()">⬅️ Back to Room</button>
+  </div>
+
+  <script>
+    let coins = parseInt(localStorage.getItem('coins')) || 100;
+    let ownedItems = JSON.parse(localStorage.getItem('ownedItems')) || [];
+
+    function enterShop() {
+      document.getElementById("room").style.display = "none";
+      document.getElementById("shop").style.display = "block";
+      document.getElementById("shopCoins").textContent = coins;
+    }
+
+    function returnToRoom() {
+      document.getElementById("room").style.display = "block";
+      document.getElementById("shop").style.display = "none";
+      updateInventory();
+      saveInventory();
+      document.getElementById("coinCount").textContent = coins;
+  localStorage.setItem('coins', coins);
+  localStorage.setItem('ownedItems', JSON.stringify(ownedItems));
+    }
+
+    function earnCoins() {
+  coins += 10;
+  document.getElementById("coinCount").textContent = coins;
+  localStorage.setItem('coins', coins);
+}
+
+    function purchase(item, cost) {
+  if (coins >= cost) {
+    coins -= cost;
+    document.getElementById("coinCount").textContent = coins;
+    document.getElementById("shopCoins").textContent = coins;
+    ownedItems.push(item);
+    localStorage.setItem('coins', coins);
+    localStorage.setItem('ownedItems', JSON.stringify(ownedItems));
+    alert(`You bought a ${item}! It has been added to your inventory.`);
+    updateInventory();
+      } else {
+        alert("Not enough coins!");
+      }
+    }
+
+    function updateInventory() {
+      const inventory = document.getElementById("inventory");
+      inventory.innerHTML = '';
+      ownedItems.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.style.position = 'absolute';
+        div.style.left = item === 'poster' ? '640px' : '320px';
+        div.style.top = item === 'poster' ? '180px' : '400px';
+        
+        const img = document.createElement("img");
+        img.src = `assets/${item === 'bed' ? 'pink-bed' : 'superhero-poster'}.png`;
+        img.style.background = 'transparent';
+        img.style.border = 'none';
+        img.style.display = 'block';
+        img.style.width = item === 'bed' ? '144px' : '48px';
+        img.style.objectFit = 'contain';
+        img.style.boxShadow = 'none';
+        img.style.height = item === 'bed' ? '144px' : '48px';
+        img.style.border = 'none';
+        img.style.background = 'transparent';
+        img.alt = item;
+        div.appendChild(img);
+
+        
+
+        div.style.zIndex = item === 'bed' ? '5' : '1';
+        document.getElementById("room").appendChild(div);
+      });
+    }
+
+    
+
+    
+
+
+
+      // Update status bars
+    let hunger = 100, happiness = 100, health = 100;
+
+    function updateBars() {
+      document.getElementById("hungerBar").style.width = hunger + "%";
+      document.getElementById("happinessBar").style.width = happiness + "%";
+      document.getElementById("healthBar").style.width = health + "%";
+    }
+
+    // Simulate depletion
+    setInterval(() => {
+      hunger = Math.max(0, hunger - 0.1);
+      happiness = Math.max(0, happiness - 0.05);
+      health = Math.max(0, health - 0.03);
+      updateBars();
+    }, 1000);
+
+    updateBars();
+
+
+
+function feed() { hunger = Math.min(100, hunger + 15); updateBars(); }
+    function play() { happiness = Math.min(100, happiness + 10); updateBars(); }
+    function heal() { health = Math.min(100, health + 8); updateBars(); }
+  document.addEventListener('keydown', (e) => {
+  const pet = document.getElementById('pet');
+  const step = 10;
+  const currentLeft = parseInt(pet.style.left) || 368;
+  const currentTop = parseInt(pet.style.top) || 268;
+
+  switch (e.key) {
+    case 'ArrowUp':
+      pet.style.top = Math.max(0, currentTop - step) + 'px';
+      pet.style.transform = 'translateY(-5px)';
+      break;
+    case 'ArrowDown':
+      pet.style.top = Math.min(536, currentTop + step) + 'px';
+      pet.style.transform = 'translateY(5px)';
+      break;
+    case 'ArrowLeft':
+      pet.style.left = Math.max(0, currentLeft - step) + 'px';
+      pet.style.transform = 'translateX(-5px)';
+      break;
+    case 'ArrowRight':
+      pet.style.left = Math.min(736, currentLeft + step) + 'px';
+      pet.style.transform = 'translateX(5px)';
+      break;
+  }
+  setTimeout(() => { pet.style.transform = 'none'; }, 100);
+});
+
+function startMinigame() {
+  let coinsEarned = 0;
+  const interval = setInterval(() => {
+    if (coinsEarned >= 10) return clearInterval(interval);
+    const coin = document.createElement('img');
+    coin.src = 'assets/coin.png';
+    coin.style.position = 'absolute';
+    coin.style.left = Math.floor(Math.random() * 740) + 'px';
+    coin.style.top = Math.floor(Math.random() * 540) + 'px';
+    coin.style.width = '32px';
+    coin.style.cursor = 'pointer';
+    coin.onclick = function () {
+      coins++;
+      coinsEarned++;
+      document.getElementById('coinCount').textContent = coins;
+      coin.remove();
+    };
+    document.getElementById('room').appendChild(coin);
+  }, 800);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'm') {
+    const music = document.getElementById('bg-music');
+    if (music.paused) {
+      music.play();
+    } else {
+      music.pause();
+    }
+  }
+});
+
+function saveInventory() {
+  localStorage.setItem('ownedItems', JSON.stringify(ownedItems));
+}
+
+window.addEventListener('load', () => {
+  updateInventory();
+});
+</script>
+  
 </body>
 </html>
